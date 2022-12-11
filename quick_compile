@@ -1,0 +1,65 @@
+#!/bin/bash
+source color_string
+
+# 获取去除拓展名的文件名称
+GetFilename() { echo ${1%.*}; }
+# 获取文件的拓展名
+GetExtensionName() { echo ${1##*.}; }
+
+# 执行命令并输出命令到终端
+# $1: 要执行的命令
+# $2: 执行命令失败时的提示信息
+ExecuteCommand() {
+    echo "命令: $1"
+    $1
+    if [ $? != 0 ];
+    then
+        echo -e $(Red $2)
+        exit -1
+    fi
+}
+
+# 基于文件拓展名进行编译
+# $1: 待编译文件名称
+Compile() {
+    input_filename=$1
+    filename=$(GetFilename $input_filename)
+    extension_name=$(GetExtensionName $input_filename)
+    case $extension_name in
+        "c")
+            compiler="gcc"
+            ;;
+        "cpp")
+            compiler="g++"
+            ;;
+        *)
+            echo -e "Compile: $(Red "不支持的文件类型!")"
+            return -1
+            ;;
+    esac
+    ExecuteCommand "$compiler $input_filename -g -o $filename -Wall" "编译失败!"
+}
+
+Execute() {
+    echo "执行目标程序"
+    ExecuteCommand "./$1"
+    echo "执行目标程序完成"
+}
+
+Help() {
+    echo -e "使用范例："
+    echo -e "    quick_compile $(Green source_filename.c)"
+    echo -e "    quick_compile $(Green source_filename.cpp)"
+    exit -1
+}
+
+if [ $# = 0 ];
+then
+    echo -e "ERROR: 请输入$(Red "源文件")"
+    Help
+fi
+
+# 编译目标文件
+ExecuteCommand "Compile $1" "编译失败!"
+# 执行目标文件
+ExecuteCommand "Execute $(GetFilename $1)" "执行失败!"
